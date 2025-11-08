@@ -1,7 +1,14 @@
 #include "Input.hpp"
 
+#include <SFML/Config.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <algorithm>
+
+namespace {
+[[nodiscard]] bool isKeyIndexValid(sf::Keyboard::Key key) {
+  return key >= 0 && key < sf::Keyboard::KeyCount;
+}
+}  // namespace
 
 InputManager::InputManager() {
   current_.fill(false);
@@ -14,12 +21,32 @@ void InputManager::beginFrame() {
 }
 
 void InputManager::handleEvent(const sf::Event& event) {
+#if SFML_VERSION_MAJOR >= 3
+  if (const auto* keyPressed = event.getIf<sf::Event::KeyPressed>()) {
+    if (isKeyIndexValid(keyPressed->code)) {
+      current_[keyPressed->code] = true;
+    }
+  } else if (const auto* keyReleased = event.getIf<sf::Event::KeyReleased>()) {
+    if (isKeyIndexValid(keyReleased->code)) {
+      current_[keyReleased->code] = false;
+    }
+  } else if (const auto* textEntered = event.getIf<sf::Event::TextEntered>()) {
+    const char32_t unicode = textEntered->unicode;
+    if (unicode >= 32 && unicode <= 126) {
+      textBuffer_.push_back(unicode);
+    } else if (unicode == 8) {  // backspace
+      if (!textBuffer_.empty()) {
+        textBuffer_.pop_back();
+      }
+    }
+  }
+#else
   if (event.type == sf::Event::KeyPressed) {
-    if (event.key.code >= 0 && event.key.code < sf::Keyboard::KeyCount) {
+    if (isKeyIndexValid(event.key.code)) {
       current_[event.key.code] = true;
     }
   } else if (event.type == sf::Event::KeyReleased) {
-    if (event.key.code >= 0 && event.key.code < sf::Keyboard::KeyCount) {
+    if (isKeyIndexValid(event.key.code)) {
       current_[event.key.code] = false;
     }
   } else if (event.type == sf::Event::TextEntered) {
@@ -31,6 +58,7 @@ void InputManager::handleEvent(const sf::Event& event) {
       }
     }
   }
+#endif
 }
 
 void InputManager::endFrame() {

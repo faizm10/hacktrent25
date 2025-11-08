@@ -1,8 +1,7 @@
 #pragma once
 
 #include <SFML/Audio/SoundBuffer.hpp>
-#include <SFML/Graphics/Font.hpp>
-#include <SFML/Graphics/Texture.hpp>
+#include <SFML/Graphics.hpp>
 #include <string>
 #include <unordered_map>
 

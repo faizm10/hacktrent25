@@ -9,6 +9,7 @@ class Player : public Entity {
  public:
   Player();
 
+  using Entity::update;
   void update(float dt, const InputManager& input, AudioManager& audio);
 
   [[nodiscard]] float interactionRadius() const;

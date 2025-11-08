@@ -1,6 +1,5 @@
 #include "HUD.hpp"
 
-#include <SFML/Graphics/RenderTarget.hpp>
 #include <iomanip>
 #include <sstream>
 

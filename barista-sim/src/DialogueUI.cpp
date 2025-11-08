@@ -1,7 +1,6 @@
 #include "DialogueUI.hpp"
 
 #include <algorithm>
-#include <SFML/Graphics/RenderTarget.hpp>
 #include "Resources.hpp"
 
 DialogueUI::DialogueUI() = default;

@@ -3,7 +3,11 @@
 
 #include "Resources.hpp"
 
+#include <SFML/Config.hpp>
 #include <stdexcept>
+
+AudioManager::SoundEntry::SoundEntry(const sf::SoundBuffer& buffer, float volume)
+    : sound(buffer), baseVolume(volume) {}
 
 void AudioManager::setResources(ResourceManager* resources) {
   resources_ = resources;
@@ -13,7 +17,11 @@ void AudioManager::playMusic(const std::string& path, bool loop, float volume) {
   if (!music_.openFromFile(path)) {
     throw std::runtime_error("Failed to open music: " + path);
   }
+#if SFML_VERSION_MAJOR >= 3
+  music_.setLooping(loop);
+#else
   music_.setLoop(loop);
+#endif
   musicBaseVolume_ = volume;
   music_.setVolume(musicBaseVolume_ * (masterVolume_ / 100.0f));
   music_.play();
@@ -28,10 +36,14 @@ void AudioManager::playSound(const std::string& bufferId, float volume) {
     return;
   }
 
-  auto& entry = sounds_[bufferId];
-  entry.baseVolume = volume;
-  entry.sound.stop();
-  entry.sound.setBuffer(resources_->soundBuffer(bufferId));
+  const auto& buffer = resources_->soundBuffer(bufferId);
+  auto [it, inserted] = sounds_.try_emplace(bufferId, buffer, volume);
+  auto& entry = it->second;
+  if (!inserted) {
+    entry.baseVolume = volume;
+    entry.sound.stop();
+    entry.sound.setBuffer(buffer);
+  }
   entry.sound.setVolume(entry.baseVolume * (masterVolume_ / 100.0f));
   entry.sound.play();
 }

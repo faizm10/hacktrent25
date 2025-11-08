@@ -16,14 +16,18 @@ void Customer::setPath(const std::vector<sf::Vector2f>& nodes) {
 }
 
 void Customer::update(float dt) {
-  sf::Vector2f pos = sprite_.getPosition();
+  if (!hasSprite()) {
+    return;
+  }
+
+  sf::Vector2f pos = sprite().getPosition();
   follower_.update(dt, pos);
-  sprite_.setPosition(pos);
+  sprite().setPosition(pos);
 
   shuffleTimer_ -= dt;
   if (shuffleTimer_ <= 0.0f) {
     shuffleTimer_ = utils::randomFloat(2.0f, 4.0f);
-    sprite_.move(utils::randomFloat(-2.0f, 2.0f), utils::randomFloat(-1.0f, 1.0f));
+    sprite().move(utils::randomFloat(-2.0f, 2.0f), utils::randomFloat(-1.0f, 1.0f));
   }
 }
 

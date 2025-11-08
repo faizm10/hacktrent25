@@ -12,7 +12,12 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-find_package(SFML 2.6 COMPONENTS graphics window system audio REQUIRED)
+# Try SFML 3.x first (Homebrew currently ships 3.0.2), then fall back to 2.6.x.
+set(SFML_COMPONENTS Graphics Window System Audio)
+find_package(SFML 3 COMPONENTS ${SFML_COMPONENTS} QUIET)
+if (NOT SFML_FOUND)
+  find_package(SFML 2.6 COMPONENTS ${SFML_COMPONENTS} REQUIRED)
+endif()
 
 file(GLOB_RECURSE BARISTA_SIM_SOURCES CONFIGURE_DEPENDS
   "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp"
@@ -22,7 +27,14 @@ add_executable(barista-sim ${BARISTA_SIM_SOURCES})
 target_include_directories(barista-sim PRIVATE
   "${CMAKE_CURRENT_SOURCE_DIR}/src"
 )
-target_link_libraries(barista-sim PRIVATE sfml-graphics sfml-window sfml-system sfml-audio)
+
+if (TARGET SFML::Graphics)
+  set(SFML_LINK_TARGETS SFML::Graphics SFML::Window SFML::System SFML::Audio)
+else()
+  set(SFML_LINK_TARGETS sfml-graphics sfml-window sfml-system sfml-audio)
+endif()
+
+target_link_libraries(barista-sim PRIVATE ${SFML_LINK_TARGETS})
 
 if (MSVC)
   target_compile_options(barista-sim PRIVATE /W4 /permissive- /Zc:preprocessor /EHsc)

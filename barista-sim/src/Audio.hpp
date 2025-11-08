@@ -21,6 +21,8 @@ class AudioManager {
  private:
   ResourceManager* resources_{nullptr};
   struct SoundEntry {
+    SoundEntry(const sf::SoundBuffer& buffer, float volume);
+
     sf::Sound sound;
     float baseVolume{100.0f};
   };

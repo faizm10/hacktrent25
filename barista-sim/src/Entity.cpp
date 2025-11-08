@@ -1,15 +1,22 @@
+#include <utility>
 #include "Entity.hpp"
 
 void Entity::update(float dt) {
-  sprite_.move(velocity_ * dt);
+  if (sprite_) {
+    sprite_->move(velocity_ * dt);
+  }
 }
 
 void Entity::draw(sf::RenderTarget& target) const {
-  target.draw(sprite_);
+  if (sprite_) {
+    target.draw(*sprite_);
+  }
 }
 
 void Entity::setPosition(const sf::Vector2f& position) {
-  sprite_.setPosition(position);
+  if (sprite_) {
+    sprite_->setPosition(position);
+  }
 }
 
 void Entity::setVelocity(const sf::Vector2f& velocity) {
@@ -17,7 +24,7 @@ void Entity::setVelocity(const sf::Vector2f& velocity) {
 }
 
 sf::Vector2f Entity::position() const {
-  return sprite_.getPosition();
+  return sprite_ ? sprite_->getPosition() : sf::Vector2f{};
 }
 
 const sf::Vector2f& Entity::velocity() const {
@@ -25,18 +32,22 @@ const sf::Vector2f& Entity::velocity() const {
 }
 
 sf::FloatRect Entity::bounds() const {
-  return sprite_.getGlobalBounds();
+  return sprite_ ? sprite_->getGlobalBounds() : sf::FloatRect{};
 }
 
-void Entity::setSprite(const sf::Sprite& sprite) {
-  sprite_ = sprite;
+void Entity::setSprite(sf::Sprite sprite) {
+  sprite_ = std::move(sprite);
 }
 
 sf::Sprite& Entity::sprite() {
-  return sprite_;
+  return sprite_.value();
 }
 
 const sf::Sprite& Entity::sprite() const {
-  return sprite_;
+  return sprite_.value();
+}
+
+bool Entity::hasSprite() const {
+  return sprite_.has_value();
 }
 

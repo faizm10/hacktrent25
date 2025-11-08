@@ -1,7 +1,10 @@
 #include "App.hpp"
 
+#include <SFML/Config.hpp>
+
 #include <algorithm>
 #include <iostream>
+#include <optional>
 
 #include "CafeScene.hpp"
 #include "ReportScene.hpp"
@@ -11,10 +14,18 @@ namespace {
 constexpr unsigned kWindowWidth = 1280;
 constexpr unsigned kWindowHeight = 720;
 constexpr float kFixedTimeStep = 1.0f / 60.0f;
+
+[[nodiscard]] sf::VideoMode makeVideoMode(unsigned width, unsigned height) {
+#if SFML_VERSION_MAJOR >= 3
+  return sf::VideoMode({width, height});
+#else
+  return sf::VideoMode(width, height);
+#endif
+}
 }  // namespace
 
 App::App()
-    : window_(sf::VideoMode(kWindowWidth, kWindowHeight), "Barista Ordering Simulator",
+    : window_(makeVideoMode(kWindowWidth, kWindowHeight), "Barista Ordering Simulator",
               sf::Style::Titlebar | sf::Style::Close) {
   window_.setVerticalSyncEnabled(false);
   window_.setFramerateLimit(60);
@@ -102,6 +113,23 @@ sf::RenderWindow& App::window() {
 }
 
 void App::processEvents() {
+#if SFML_VERSION_MAJOR >= 3
+  while (auto eventOpt = window_.pollEvent()) {
+    const sf::Event& event = *eventOpt;
+
+    if (event.is<sf::Event::Closed>()) {
+      running_ = false;
+      window_.close();
+      break;
+    }
+
+    input_.handleEvent(event);
+
+    if (currentScene_) {
+      currentScene_->handleEvent(event);
+    }
+  }
+#else
   sf::Event event{};
   while (window_.pollEvent(event)) {
     if (event.type == sf::Event::Closed) {
@@ -116,6 +144,7 @@ void App::processEvents() {
       currentScene_->handleEvent(event);
     }
   }
+#endif
 }
 
 void App::update(float dt) {

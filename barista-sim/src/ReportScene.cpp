@@ -17,6 +17,15 @@ void ReportScene::onEnter() {
 }
 
 void ReportScene::handleEvent(const sf::Event& event) {
+#if SFML_VERSION_MAJOR >= 3
+  if (const auto* key = event.getIf<sf::Event::KeyPressed>()) {
+    if (key->code == sf::Keyboard::Enter || key->code == sf::Keyboard::Space) {
+      app().restartSimulation();
+    } else if (key->code == sf::Keyboard::Escape) {
+      app().window().close();
+    }
+  }
+#else
   if (event.type == sf::Event::KeyPressed) {
     if (event.key.code == sf::Keyboard::Enter || event.key.code == sf::Keyboard::Space) {
       app().restartSimulation();
@@ -24,6 +33,7 @@ void ReportScene::handleEvent(const sf::Event& event) {
       app().window().close();
     }
   }
+#endif
 }
 
 void ReportScene::update(float /*dt*/) {

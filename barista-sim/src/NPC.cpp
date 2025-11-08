@@ -1,6 +1,7 @@
 #include "NPC.hpp"
 
 #include <cmath>
+#include <utility>
 
 NPC::NPC(std::string name) : name_(std::move(name)) {}
 
@@ -25,6 +26,8 @@ void NPC::setPosition(const sf::Vector2f& position) {
 void NPC::updateIdle(float dt) {
   idlePhase_ += idleSpeed_ * dt;
   const float offset = std::sin(idlePhase_) * idleAmplitude_;
-  sprite_.setPosition(basePosition_.x, basePosition_.y + offset);
+  if (hasSprite()) {
+    sprite().setPosition(basePosition_.x, basePosition_.y + offset);
+  }
 }
 

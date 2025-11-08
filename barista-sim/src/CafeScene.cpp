@@ -1,5 +1,6 @@
 #include "CafeScene.hpp"
 
+#include <SFML/Config.hpp>
 #include <SFML/Window/Keyboard.hpp>
 #include <algorithm>
 
@@ -53,14 +54,14 @@ void CafeScene::onExit() {
 }
 
 void CafeScene::handleEvent(const sf::Event& event) {
-  if (event.type == sf::Event::KeyPressed) {
-    if (event.key.code == sf::Keyboard::Escape) {
+  auto handleKeyPress = [&](sf::Keyboard::Key key) {
+    if (key == sf::Keyboard::Escape) {
       app().window().close();
       return;
     }
 
     if (!inConversation_) {
-      if (event.key.code == sf::Keyboard::E) {
+      if (key == sf::Keyboard::E) {
         const float distance = utils::distance(player_.position(), barista_.position());
         if (distance <= player_.interactionRadius()) {
           beginConversation();
@@ -68,38 +69,56 @@ void CafeScene::handleEvent(const sf::Event& event) {
       }
     } else {
       if (!barista_.requiresInput()) {
-        if (event.key.code >= sf::Keyboard::Num1 && event.key.code <= sf::Keyboard::Num4) {
-          const std::size_t index = static_cast<std::size_t>(event.key.code - sf::Keyboard::Num1);
+        if (key >= sf::Keyboard::Num1 && key <= sf::Keyboard::Num4) {
+          const std::size_t index = static_cast<std::size_t>(key - sf::Keyboard::Num1);
           handleOptionSelection(index);
-        } else if (event.key.code == sf::Keyboard::Enter) {
+        } else if (key == sf::Keyboard::Enter) {
           if (barista_.state() == Barista::State::Confirm || barista_.state() == Barista::State::Complete) {
             finalizeOrder();
           }
         }
       } else {
-        if (event.key.code == sf::Keyboard::Enter && !nameBuffer_.empty()) {
+        if (key == sf::Keyboard::Enter && !nameBuffer_.empty()) {
           submitName();
         }
       }
     }
-  } else if (event.type == sf::Event::TextEntered) {
-    if (inConversation_ && barista_.requiresInput()) {
-      if (event.text.unicode == 8) {  // backspace
-        if (!nameBuffer_.empty()) {
-          nameBuffer_.pop_back();
-          dialogue_.setInputText(nameBuffer_);
-        }
-      } else if (event.text.unicode == 13) {
-        if (!nameBuffer_.empty()) {
-          submitName();
-        }
-      } else if (isPrintable(event.text.unicode)) {
-        nameBuffer_.push_back(static_cast<char>(event.text.unicode));
-        nameBuffer_ = toPrintableString(nameBuffer_, 16U);
+  };
+
+  auto handleTextInput = [&](char32_t unicode) {
+    if (!inConversation_ || !barista_.requiresInput()) {
+      return;
+    }
+
+    if (unicode == 8) {  // backspace
+      if (!nameBuffer_.empty()) {
+        nameBuffer_.pop_back();
         dialogue_.setInputText(nameBuffer_);
       }
+    } else if (unicode == 13) {
+      if (!nameBuffer_.empty()) {
+        submitName();
+      }
+    } else if (isPrintable(unicode)) {
+      nameBuffer_.push_back(static_cast<char>(unicode));
+      nameBuffer_ = toPrintableString(nameBuffer_, 16U);
+      dialogue_.setInputText(nameBuffer_);
     }
+  };
+
+#if SFML_VERSION_MAJOR >= 3
+  if (const auto* key = event.getIf<sf::Event::KeyPressed>()) {
+    handleKeyPress(key->code);
+  } else if (const auto* text = event.getIf<sf::Event::TextEntered>()) {
+    handleTextInput(text->unicode);
   }
+#else
+  if (event.type == sf::Event::KeyPressed) {
+    handleKeyPress(event.key.code);
+  } else if (event.type == sf::Event::TextEntered) {
+    handleTextInput(event.text.unicode);
+  }
+#endif
 }
 
 void CafeScene::update(float dt) {

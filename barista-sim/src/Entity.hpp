@@ -1,8 +1,8 @@
 #pragma once
 
-#include <SFML/Graphics/Sprite.hpp>
-#include <SFML/Graphics/RenderTarget.hpp>
-#include <SFML/System/Vector2.hpp>
+#include <SFML/Graphics.hpp>
+#include <SFML/System.hpp>
+#include <optional>
 
 class Entity {
  public:
@@ -18,12 +18,13 @@ class Entity {
   [[nodiscard]] const sf::Vector2f& velocity() const;
   [[nodiscard]] sf::FloatRect bounds() const;
 
-  void setSprite(const sf::Sprite& sprite);
+  void setSprite(sf::Sprite sprite);
   sf::Sprite& sprite();
   [[nodiscard]] const sf::Sprite& sprite() const;
+  [[nodiscard]] bool hasSprite() const;
 
  protected:
-  sf::Sprite sprite_;
+  std::optional<sf::Sprite> sprite_;
   sf::Vector2f velocity_{};
 };
 
