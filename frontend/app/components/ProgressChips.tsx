@@ -19,18 +19,24 @@ const ProgressChips = ({
   ];
 
   return (
-    <ul className="flex flex-wrap gap-2" aria-label="Order progress">
+    <ul className="flex flex-wrap gap-3" aria-label="Order progress">
       {chips.map((chip) => {
-        const variantClass = chip.active
-          ? "border-indigo-200 bg-indigo-50 text-indigo-700"
-          : "border-slate-200 bg-white text-slate-600";
-
         return (
           <li key={chip.label}>
             <span
-              className={`inline-flex items-center rounded-full border px-3 py-1 text-sm font-medium ${variantClass}`}
+              className="inline-flex items-center rounded-full px-4 py-2 text-sm font-medium transition-all duration-300"
+              style={chip.active ? {
+                backgroundColor: '#8B9D83',
+                color: '#FFFFFF',
+                border: 'none'
+              } : {
+                backgroundColor: '#C4D0BC',
+                color: '#4A3F35',
+                border: 'none'
+              }}
               aria-label={`${chip.label} ${chip.active ? "completed" : "not completed"}`}
             >
+              {chip.active && <span className="mr-2">✓</span>}
               {chip.label}
             </span>
           </li>
