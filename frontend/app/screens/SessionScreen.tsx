@@ -21,6 +21,7 @@ const SessionScreen = () => {
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [recognitionSupported, setRecognitionSupported] = useState(true);
   const [mediaSupported, setMediaSupported] = useState(true);
+  const [savedTranscript, setSavedTranscript] = useState<string | null>(null);
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const recognitionRef = useRef<any>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -128,6 +129,7 @@ const SessionScreen = () => {
         setAudioUrl(null);
       }
 
+      setSavedTranscript(null);
       if (typeof window !== "undefined") {
         (window as any).localStream = stream;
       }
@@ -257,6 +259,18 @@ const SessionScreen = () => {
     return "Mic is OFF";
   }, [isListening, mediaSupported]);
 
+  const handleStopAndSave = () => {
+    const snapshot = transcript.trim();
+    stopListening();
+    if (snapshot) {
+      setSavedTranscript(snapshot);
+      setStatusMessage("Transcript saved locally. Copy or restart when ready.");
+    } else {
+      setSavedTranscript("");
+      setStatusMessage("Transcript saved (no speech detected).");
+    }
+  };
+
   useEffect(() => {
     return () => {
       if (audioUrl) {
@@ -308,6 +322,18 @@ const SessionScreen = () => {
                 className="bg-slate-100"
               />
             ) : null}
+            {savedTranscript !== null ? (
+              <div className="rounded-lg border border-slate-200 bg-white/70 p-4">
+                <h3 className="text-sm font-semibold text-slate-800">Saved Transcript</h3>
+                <p className="mt-2 text-sm text-slate-600 break-words whitespace-pre-wrap">
+                  {savedTranscript || "No transcript captured during this session."}
+                </p>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-500">
+                Stop the session to save a snapshot of your transcript.
+              </p>
+            )}
           </div>
         </Card>
 
@@ -344,6 +370,12 @@ const SessionScreen = () => {
             label={isListening ? "Listening..." : "Start"}
             onClick={startListening}
             disabled={isListening}
+          />
+          <PrimaryButton
+            label="Stop & Save"
+            variant="neutral"
+            onClick={handleStopAndSave}
+            disabled={!isListening && !transcript.trim()}
           />
           <PrimaryButton label="Next Line" variant="neutral" />
           <PrimaryButton label="Finish" variant="neutral" onClick={handleFinish} />
