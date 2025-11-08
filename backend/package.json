@@ -14,12 +14,16 @@
   "license": "ISC",
   "dependencies": {
     "@google/generative-ai": "latest",
+    "@elevenlabs/elevenlabs-js": "^2.22.0",
+    "@google-cloud/speech": "^6.1.1",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.5",
     "@types/node": "^24.10.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
+    "node-record-lpcm16": "^2.0.5",
+    "play-sound": "^1.1.6",
     "typescript": "^5.9.3"
   },
   "devDependencies": {
