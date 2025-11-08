@@ -1,7 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Card from "../components/Card";
+import EmptyState from "../components/EmptyState";
 import Masthead from "../components/Masthead";
 import PrimaryButton from "../components/PrimaryButton";
 import ProgressChips from "../components/ProgressChips";
@@ -13,6 +15,255 @@ import { ROUTES } from "../lib/routes";
 
 const SessionScreen = () => {
   const router = useRouter();
+  const [transcript, setTranscript] = useState("");
+  const [isListening, setIsListening] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [recognitionSupported, setRecognitionSupported] = useState(true);
+  const [mediaSupported, setMediaSupported] = useState(true);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const liveAudioRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      setRecognitionSupported(false);
+      setMediaSupported(false);
+      return;
+    }
+
+    const hasMedia = Boolean(navigator.mediaDevices?.getUserMedia);
+    const SpeechRecognitionConstructor =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    setMediaSupported(hasMedia);
+    setRecognitionSupported(Boolean(SpeechRecognitionConstructor));
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      setRecognitionSupported(false);
+      setMediaSupported(false);
+      return;
+    }
+
+    const hasMedia = !!navigator.mediaDevices?.getUserMedia;
+    const SpeechRecognitionConstructor =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    setMediaSupported(hasMedia);
+    setRecognitionSupported(Boolean(SpeechRecognitionConstructor));
+  }, []);
+
+  const stopListening = useCallback(() => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.onresult = null;
+        recognitionRef.current.onerror = null;
+        recognitionRef.current.onend = null;
+        recognitionRef.current.stop();
+      } catch (err) {
+        console.error("Error stopping recognition", err);
+      }
+    }
+
+    if (mediaRecorderRef.current) {
+      try {
+        if (mediaRecorderRef.current.state !== "inactive") {
+          mediaRecorderRef.current.stop();
+        }
+      } catch (error) {
+        console.error("Error stopping recorder", error);
+      }
+      mediaRecorderRef.current.ondataavailable = null;
+      mediaRecorderRef.current.onstop = null;
+      mediaRecorderRef.current = null;
+    }
+
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
+    }
+
+    if (liveAudioRef.current) {
+      liveAudioRef.current.srcObject = null;
+    }
+
+    setIsListening(false);
+    setStatusMessage("Session stopped. You can restart when ready.");
+  }, []);
+
+  const startListening = useCallback(async () => {
+    if (isListening) {
+      return;
+    }
+
+    if (!mediaSupported) {
+      setStatusMessage("Microphone access is not supported in this browser.");
+      return;
+    }
+
+    if (typeof window === "undefined") {
+      setStatusMessage("Speech features are unavailable in this environment.");
+      return;
+    }
+
+    const SpeechRecognitionConstructor =
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognitionConstructor) {
+      setRecognitionSupported(false);
+      setStatusMessage("Live transcription is not supported in this browser.");
+    }
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+      mediaStreamRef.current = stream;
+      audioChunksRef.current = [];
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+        setAudioUrl(null);
+      }
+
+      if (typeof window !== "undefined") {
+        (window as any).localStream = stream;
+      }
+
+      if (liveAudioRef.current) {
+        liveAudioRef.current.srcObject = stream;
+        liveAudioRef.current.autoplay = true;
+        liveAudioRef.current.muted = true;
+        liveAudioRef.current
+          .play()
+          .catch((error) => {
+            console.warn(
+              "Autoplay prevented. Audio will remain muted until user interacts.",
+              error
+            );
+          });
+      }
+    } catch (error) {
+      console.error("Microphone permission error", error);
+      setStatusMessage(
+        "Microphone permission was denied. Please allow access to record."
+      );
+      return;
+    }
+
+    let recognition = recognitionRef.current;
+
+    if (SpeechRecognitionConstructor) {
+      if (!recognition) {
+        recognition = new SpeechRecognitionConstructor();
+        recognitionRef.current = recognition;
+      }
+
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+
+      recognition.onresult = (event: any) => {
+        let combined = "";
+        for (let i = 0; i < event.results.length; i += 1) {
+          combined += event.results[i][0].transcript;
+        }
+        setTranscript(combined.trim());
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error("Speech recognition error", event);
+        setRecognitionSupported(false);
+        setStatusMessage(
+          event.error === "not-allowed"
+            ? "Speech recognition permission denied."
+            : "Speech recognition error occurred."
+        );
+        stopListening();
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+        setStatusMessage("Session stopped. You can restart when ready.");
+      };
+
+      try {
+        recognition.start();
+      } catch (error) {
+        console.error("Speech recognition start error", error);
+        setStatusMessage("Unable to start speech recognition.");
+      }
+    }
+
+    if (mediaStreamRef.current && typeof window !== "undefined" && window.MediaRecorder) {
+      const recorder = new window.MediaRecorder(mediaStreamRef.current);
+      mediaRecorderRef.current = recorder;
+
+      recorder.ondataavailable = (event: BlobEvent) => {
+        if (event.data && event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      recorder.onstop = () => {
+        if (audioChunksRef.current.length > 0) {
+          const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+          const url = URL.createObjectURL(blob);
+          audioChunksRef.current = [];
+          setAudioUrl(url);
+        }
+      };
+
+      try {
+        recorder.start();
+      } catch (error) {
+        console.error("MediaRecorder start error", error);
+        setStatusMessage("Unable to record audio preview.");
+      }
+    } else if (typeof window !== "undefined" && typeof window.MediaRecorder === "undefined") {
+      setStatusMessage("Recording preview is not supported in this browser.");
+    }
+
+    try {
+      setTranscript("");
+      setStatusMessage("Listening... Speak clearly into your microphone.");
+      setIsListening(true);
+    } catch (error) {
+      console.error("Speech recognition start error", error);
+      setStatusMessage("Unable to start speech recognition.");
+    }
+  }, [audioUrl, isListening, mediaSupported, stopListening]);
+
+  useEffect(() => {
+    return () => {
+      stopListening();
+    };
+  }, [stopListening]);
+
+  const handleFinish = () => {
+    stopListening();
+    router.push(ROUTES.FEEDBACK);
+  };
+
+  const micStatusLabel = useMemo(() => {
+    if (!mediaSupported) {
+      return "Microphone unavailable";
+    }
+    if (isListening) {
+      return "Mic is ON";
+    }
+    return "Mic is OFF";
+  }, [isListening, mediaSupported]);
+
+  useEffect(() => {
+    return () => {
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+    };
+  }, [audioUrl]);
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
@@ -24,6 +275,7 @@ const SessionScreen = () => {
             href={ROUTES.HOME}
             onClick={(event) => {
               event.preventDefault();
+              stopListening();
               router.push(ROUTES.HOME);
             }}
             className="text-sm font-medium text-indigo-600 underline-offset-4 hover:underline"
@@ -43,8 +295,40 @@ const SessionScreen = () => {
 
         <Card>
           <div className="space-y-4">
-            {/* TODO: replace TranscriptPanel placeholder with live transcript */}
-            <TranscriptPanel title="Your Transcript" />
+            <TranscriptPanel
+              title="Your Transcript"
+              content={transcript}
+              placeholderText="Start the session to see your words appear in real time."
+            />
+            {!recognitionSupported ? (
+              <EmptyState
+                icon="⚠️"
+                title="Live transcription unavailable"
+                helperText="This browser does not support the Web Speech API. You can still record audio."
+                className="bg-slate-100"
+              />
+            ) : null}
+          </div>
+        </Card>
+
+        <Card>
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-slate-900">
+              Recording Playback
+            </h2>
+            {audioUrl ? (
+              <audio
+                controls
+                className="w-full"
+                src={audioUrl}
+                aria-label="Session recording playback"
+              />
+            ) : (
+              <EmptyState
+                title="No recording yet"
+                helperText="Start the session to capture audio and play it back here."
+              />
+            )}
           </div>
         </Card>
 
@@ -56,18 +340,39 @@ const SessionScreen = () => {
         </section>
 
         <Toolbar>
-          {/* TODO: wire Start to microphone */}
-          <PrimaryButton label="Start" />
-          <PrimaryButton label="Next Line" variant="neutral" />
           <PrimaryButton
-            label="Finish"
-            variant="neutral"
-            onClick={() => router.push(ROUTES.FEEDBACK)}
+            label={isListening ? "Listening..." : "Start"}
+            onClick={startListening}
+            disabled={isListening}
           />
+          <PrimaryButton label="Next Line" variant="neutral" />
+          <PrimaryButton label="Finish" variant="neutral" onClick={handleFinish} />
+          <span
+            className={`ml-auto inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${
+              isListening
+                ? "bg-red-100 text-red-700"
+                : "bg-slate-200 text-slate-600"
+            }`}
+          >
+            <span
+              aria-hidden="true"
+              className={`h-2 w-2 rounded-full ${
+                isListening ? "bg-red-500 animate-pulse" : "bg-slate-400"
+              }`}
+            />
+            {micStatusLabel}
+          </span>
         </Toolbar>
 
-        <ToastPlaceholder />
+        <ToastPlaceholder message={statusMessage} />
       </main>
+      <audio
+        ref={liveAudioRef}
+        aria-hidden="true"
+        className="hidden"
+        muted
+        playsInline
+      />
     </div>
   );
 };
