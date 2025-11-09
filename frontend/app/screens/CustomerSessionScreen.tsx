@@ -37,6 +37,8 @@ const CustomerSessionScreen = () => {
   const [mediaSupported, setMediaSupported] = useState(true);
   const [savedTranscript, setSavedTranscript] = useState<string | null>(null);
   const [showArchive, setShowArchive] = useState(true);
+  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
+  const [hasUserSpoken, setHasUserSpoken] = useState(false);
 
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const recognitionRef = useRef<any>(null);
@@ -138,6 +140,8 @@ const CustomerSessionScreen = () => {
       }
 
       setSavedTranscript(null);
+      setHasUserSpoken(false);
+      setSessionStartTime(null);
       if (typeof window !== "undefined") {
         (window as any).localStream = stream;
       }
@@ -277,8 +281,78 @@ const CustomerSessionScreen = () => {
   }, [assistantAudioUrl]);
 
   const handleFinish = () => {
+    console.log("🔴 Rush session handleFinish called");
+
     stopListening();
-    router.push(ROUTES.FEEDBACK);
+
+    const endTimestamp = Date.now();
+    const startTimestamp = sessionStartTime ?? endTimestamp;
+    const durationSeconds = Math.max(0, (endTimestamp - startTimestamp) / 1000);
+
+    const fullTranscript =
+      messages
+        .filter((msg) => msg.role === "user")
+        .map((msg) => msg.content)
+        .join(" ")
+        .trim() || transcript.trim();
+
+    const words =
+      fullTranscript.length > 0
+        ? fullTranscript.split(/\s+/).filter(Boolean)
+        : [];
+    const wordCount = words.length;
+    const wordsPerMinute =
+      durationSeconds > 0 ? Math.round((wordCount / durationSeconds) * 60) : 0;
+
+    console.log("📊 Rush Session Data:", {
+      transcript: fullTranscript,
+      wordCount,
+      duration: durationSeconds,
+      wordsPerMinute,
+      messagesCount: messages.length,
+    });
+
+    const sessionData = {
+      transcript: fullTranscript,
+      messages: messages.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      })),
+      wordCount,
+      duration: parseFloat(durationSeconds.toFixed(1)),
+      wordsPerMinute,
+      startTime: new Date(startTimestamp).toISOString(),
+      endTime: new Date(endTimestamp).toISOString(),
+      audioUrl: audioUrl || null,
+      scenarioType: "customer-rush",
+    };
+
+    try {
+      localStorage.setItem("lastSessionData", JSON.stringify(sessionData));
+      console.log("✅ Rush session data saved to localStorage");
+    } catch (error) {
+      console.error("❌ Failed to save session data:", error);
+    }
+
+    try {
+      localStorage.setItem("sessionTranscript", sessionData.transcript);
+      localStorage.setItem(
+        "sessionDuration",
+        sessionData.duration.toString()
+      );
+      if (sessionData.audioUrl) {
+        localStorage.setItem("sessionAudioUrl", sessionData.audioUrl);
+      } else {
+        localStorage.removeItem("sessionAudioUrl");
+      }
+    } catch (error) {
+      console.warn("⚠️ Unable to persist legacy session keys", error);
+    }
+
+    window.setTimeout(() => {
+      console.log("🔄 Navigating to /feedback");
+      router.push(ROUTES.FEEDBACK);
+    }, 100);
   };
 
   const micStatusLabel = useMemo(() => {
@@ -296,6 +370,8 @@ const CustomerSessionScreen = () => {
     stopListening();
     if (snapshot) {
       setSavedTranscript(snapshot);
+      setHasUserSpoken(true);
+      setSessionStartTime((previous) => previous ?? Date.now());
       setStatusMessage("Sending your response to the customer...");
       await sendMessage(snapshot);
       setStatusMessage("Response sent. Continue the conversation when ready.");
@@ -328,6 +404,18 @@ const CustomerSessionScreen = () => {
     return orderState?.completed ?? false;
   }, [orderState]);
 
+  const canFinish = useMemo(() => {
+    if (isOrderComplete) {
+      return true;
+    }
+    if (hasUserSpoken) {
+      return true;
+    }
+    return messages.some(
+      (msg) => msg.role === "user" && msg.content.trim().length > 0
+    );
+  }, [hasUserSpoken, isOrderComplete, messages]);
+
   useEffect(() => {
     return () => {
       if (audioUrl) {
@@ -339,6 +427,23 @@ const CustomerSessionScreen = () => {
   const liveBubbleText = transcript.trim()
     ? transcript
     : "Start speaking and your words will appear here in real time.";
+  useEffect(() => {
+    const trimmed = transcript.trim();
+    if (trimmed.length > 0) {
+      setHasUserSpoken(true);
+      setSessionStartTime((previous) => previous ?? Date.now());
+    }
+  }, [transcript]);
+
+  useEffect(() => {
+    const hasUserMessage = messages.some(
+      (msg) => msg.role === "user" && msg.content.trim().length > 0
+    );
+    if (hasUserMessage) {
+      setHasUserSpoken(true);
+      setSessionStartTime((previous) => previous ?? Date.now());
+    }
+  }, [messages]);
 
   useEffect(() => {
     const scrollToBottom = () => {
@@ -542,7 +647,7 @@ const CustomerSessionScreen = () => {
 
                   <button
                     onClick={handleFinish}
-                    disabled={!isOrderComplete}
+                    disabled={!canFinish}
                     className="px-6 py-3 text-base font-medium rounded-lg border-2 transition-all duration-300 active:scale-95 focus:ring-4 focus:ring-opacity-50 focus:outline-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                     style={{
                       borderColor: "#C5A967",
@@ -550,7 +655,7 @@ const CustomerSessionScreen = () => {
                       backgroundColor: "transparent",
                     }}
                     onMouseEnter={(e) => {
-                      if (isOrderComplete) {
+                      if (canFinish) {
                         e.currentTarget.style.backgroundColor = "#F6ECD3";
                       }
                     }}
