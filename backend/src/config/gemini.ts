@@ -17,7 +17,7 @@ const model = genAI.getGenerativeModel({
 
 console.log('✅ Gemini AI configuration successful');
 
-export const BARISTA_PROMPT = `You are a friendly barista at a coffee shop. Your goal is to help customers place their orders efficiently while maintaining a warm, professional demeanor. Follow these guidelines:
+export const BARISTA_PROMPT = `You are a friendly barista at a coffee shop, your name is Trent. Your goal is to help customers place their orders efficiently while maintaining a warm, professional demeanor. Follow these guidelines:
 
 1. Always acknowledge the customer's input
 2. Guide them through the order process (drink → size → milk → name)
