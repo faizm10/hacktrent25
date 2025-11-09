@@ -243,9 +243,7 @@ const SessionScreen = () => {
 
     try {
       setTranscript("");
-      if (!hasUserSpoken) {
-        setSessionStartTime(null);
-      }
+      setSessionStartTime(null);
       setStatusMessage("Listening... Speak clearly into your microphone.");
       setIsListening(true);
     } catch (error) {
@@ -299,8 +297,6 @@ const SessionScreen = () => {
       duration: durationSeconds,
       wordsPerMinute,
       hasUserSpoken,
-      hasTranscriptContent,
-      hasUserMessage,
       canFinish,
     });
 
@@ -396,45 +392,14 @@ const SessionScreen = () => {
     }
   }, [messages]);
 
-  const hasUserMessage = useMemo(() => {
-    return messages.some(
-      (msg) => msg.role === "user" && msg.content.trim().length > 0
-    );
-  }, [messages]);
-
-  const hasTranscriptContent = useMemo(() => {
-    if (transcript.trim().length > 0) {
-      return true;
-    }
-    if (savedTranscript && savedTranscript.trim().length > 0) {
-      return true;
-    }
-    return Boolean(audioUrl);
-  }, [audioUrl, savedTranscript, transcript]);
-
-  const canFinish = useMemo(() => {
-    return hasUserSpoken || hasTranscriptContent || hasUserMessage;
-  }, [hasTranscriptContent, hasUserMessage, hasUserSpoken]);
+  const canFinish = hasUserSpoken;
 
   useEffect(() => {
     console.log("🧠 canFinish evaluation:", {
       hasUserSpoken,
-      hasTranscriptContent,
-      hasUserMessage,
-      transcriptLength: transcript.trim().length,
-      savedTranscriptLength: savedTranscript?.trim().length ?? 0,
-      audioUrlExists: Boolean(audioUrl),
       canFinish,
     });
-  }, [
-    audioUrl,
-    canFinish,
-    hasTranscriptContent,
-    hasUserMessage,
-    hasUserSpoken,
-    savedTranscript,
-    transcript,
-  ]);
+  }, [canFinish, hasUserSpoken]);
 
   useEffect(() => {
     return () => {
