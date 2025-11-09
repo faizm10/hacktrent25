@@ -1,8 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { motion } from "framer-motion";
-import { HERO_TAGLINE } from "../lib/placeholders";
 import { ROUTES } from "../lib/routes";
 
 const features = [
@@ -111,7 +111,14 @@ const HomeScreen = () => {
               onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#6d8f5d'}
               onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#80a66e'}
             >
-              <span>☕</span>
+              <Image
+                src="/coffee-cup.png"
+                alt=""
+                width={24}
+                height={24}
+                className="w-6 h-6"
+                aria-hidden="true"
+              />
               <span>Try Ordering Coffee</span>
             </button>
             
@@ -165,7 +172,7 @@ const HomeScreen = () => {
                 </h3>
                 
                 {/* Description */}
-                <p className="text-base md:text-lg leading-relaxed flex-grow" style={{ color: '#6b7280' }}>
+                <p className="text-base md:text-lg leading-relaxed grow" style={{ color: '#6b7280' }}>
                   {feature.description}
                 </p>
               </motion.div>
@@ -247,7 +254,13 @@ const HomeScreen = () => {
           <div className="text-center space-y-6">
             {/* Logo */}
             <div className="flex items-center justify-center gap-2 text-white">
-              <span className="text-2xl">🎙️</span>
+            <Image
+                src="/favicon.ico"
+                alt="EchoLag Logo"
+                width={24}
+                height={24}
+                priority
+              />
               <span className="text-xl font-bold">EchoLag</span>
             </div>
             

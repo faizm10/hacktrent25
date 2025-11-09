@@ -1,13 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Card from "../components/Card";
 import CafeBackground from "../components/CafeBackground";
 import BaristaSimulator from "../components/BaristaSimulator";
@@ -347,14 +341,26 @@ const CustomerSessionScreen = () => {
     : "Start speaking and your words will appear here in real time.";
 
   useEffect(() => {
-    if (!liveTranscriptRef.current) {
-      return;
-    }
-    const container = liveTranscriptRef.current;
-    requestAnimationFrame(() => {
-      container.scrollTop = container.scrollHeight;
-    });
-  }, [transcript]);
+    const scrollToBottom = () => {
+      // Handle live transcript scrolling
+      if (liveTranscriptRef.current) {
+        const container = liveTranscriptRef.current;
+        const scrollHeight = container.scrollHeight;
+        container.scrollTop = scrollHeight;
+      }
+
+      // Handle archive scrolling
+      if (archiveContentRef.current) {
+        const container = archiveContentRef.current;
+        const scrollHeight = container.scrollHeight;
+        container.scrollTop = scrollHeight;
+      }
+    };
+
+    // Ensure scrolling happens after content updates
+    const timeoutId = setTimeout(scrollToBottom, 50);
+    return () => clearTimeout(timeoutId);
+  }, [transcript, messages, showArchive]);
 
   return (
     <CafeBackground>
@@ -369,13 +375,15 @@ const CustomerSessionScreen = () => {
               stopListening();
               router.push(ROUTES.HOME);
             }}
-            className="text-sm font-medium text-white rounded-full px-6 py-2 transition-all duration-300 focus:ring-4 focus:ring-opacity-50 focus:outline-none cursor-pointer"
+            className="text-sm font-medium text-white rounded-lg px-6 py-2 transition-all duration-300 focus:ring-4 focus:ring-opacity-50 focus:outline-none cursor-pointer hover:scale-110"
             style={{ backgroundColor: "rgba(255, 255, 255, 0.2)" }}
             onMouseEnter={(e) =>
-              (e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.3)")
+              (e.currentTarget.style.backgroundColor =
+                "rgba(255, 255, 255, 0.3)")
             }
             onMouseLeave={(e) =>
-              (e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.2)")
+              (e.currentTarget.style.backgroundColor =
+                "rgba(255, 255, 255, 0.2)")
             }
           >
             Back to Home
@@ -392,15 +400,17 @@ const CustomerSessionScreen = () => {
                   <div className="text-xs font-semibold uppercase tracking-widest text-[#5A7D66]">
                     Interactive Scenario
                   </div>
-                  <h2 className="text-xl font-semibold" style={{ color: "#324038" }}>
+                  <h2
+                    className="text-xl font-semibold"
+                    style={{ color: "#324038" }}
+                  >
                     2D Barista Ordering Simulator
                   </h2>
                 </div>
                 <p className="text-sm text-[#4A5A52] max-w-lg">
-                  Move with WASD, press E at the counter, and complete the drink order. Results appear once the pickup
-                  name is confirmed.
+                  Move with WASD, press E at the counter, and complete the drink
+                  order. Results appear once the pickup name is confirmed.
                 </p>
-                
               </div>
               <BaristaSimulator />
             </div>
@@ -412,7 +422,8 @@ const CustomerSessionScreen = () => {
                       Live Transcript
                     </h3>
                     <p className="text-sm text-[#4A5A52]">
-                      Watch your spoken words stream into text without leaving the simulator.
+                      Watch your spoken words stream into text without leaving
+                      the simulator.
                     </p>
                   </div>
                   {/* <button
@@ -434,12 +445,17 @@ const CustomerSessionScreen = () => {
                   <div
                     ref={liveTranscriptRef}
                     className="max-h-64 min-h-[200px] overflow-y-auto rounded-2xl border border-white/60 bg-white/95 p-5 text-sm text-[#4A3F35] shadow-inner"
+                    style={{
+                      overscrollBehavior: "contain",
+                    }}
                   >
-                    <p className="whitespace-pre-wrap">
-                      {transcript.trim()
-                        ? transcript
-                        : "Start the mic to stream your words here in text form."}
-                    </p>
+                    <div className="flex flex-col-reverse">
+                      <p className="whitespace-pre-wrap">
+                        {transcript.trim()
+                          ? transcript
+                          : "Start the mic to stream your words here in text form."}
+                      </p>
+                    </div>
                   </div>
                 </div>
                 {!recognitionSupported ? (
@@ -467,15 +483,20 @@ const CustomerSessionScreen = () => {
                         </div>
                       ))
                     ) : (
-                      <p className="text-sm text-slate-500">No conversation history yet.</p>
+                      <p className="text-sm text-slate-500">
+                        No conversation history yet.
+                      </p>
                     )}
                   </div>
                 )}
               </div>
               <div className="flex flex-col gap-5 rounded-3xl border border-white/40 bg-white/75 px-6 py-6 text-center text-[#4A3F35] shadow-lg backdrop-blur">
-                <h3 className="text-lg font-semibold uppercase tracking-[0.2em] text-[#5A7D66]">Session Controls</h3>
+                <h3 className="text-lg font-semibold uppercase tracking-[0.2em] text-[#5A7D66]">
+                  Session Controls
+                </h3>
                 <p className="text-sm text-[#4A5A52]">
-                  Start recording, send the transcript, or finish your session without leaving the simulator view.
+                  Start recording, send the transcript, or finish your session
+                  without leaving the simulator view.
                 </p>
                 <Toolbar>
                   <button
@@ -556,7 +577,9 @@ const CustomerSessionScreen = () => {
                   >
                     <span
                       className="inline-block h-2.5 w-2.5 rounded-full"
-                      style={{ backgroundColor: isListening ? "#6AA97C" : "#C5A967" }}
+                      style={{
+                        backgroundColor: isListening ? "#6AA97C" : "#C5A967",
+                      }}
                     />
                     Mic is {isListening ? "ON" : "OFF"}
                   </span>
@@ -565,10 +588,6 @@ const CustomerSessionScreen = () => {
             </div>
           </div>
         </section>
-
-
-
-
 
         {/* <ToastPlaceholder message={statusMessage} /> */}
       </main>
@@ -585,4 +604,3 @@ const CustomerSessionScreen = () => {
 };
 
 export default CustomerSessionScreen;
-
