@@ -19,4 +19,5 @@ export interface ConversationRequest {
 export interface ConversationResponse {
   message: string;
   suggestions?: string[];
+  orderState?: OrderState;
 }
