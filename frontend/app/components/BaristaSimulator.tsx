@@ -628,7 +628,7 @@ const BaristaSimulator = () => {
     const score = Math.round(completionRatio * 100)
 
     return (
-      <div className="pointer-events-none absolute inset-0 z-20 flex items-start justify-center ">
+      <div className="absolute inset-0 z-20 flex items-start justify-center ">
         <div className="relative flex w-[640px] max-w-[90vw] flex-col gap-6 rounded-[48px] border-8 border-[#f4c267] bg-[#fff6e6] p-10 shadow-[0_40px_120px_rgba(43,24,6,0.25)]">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
             <div className="relative mx-auto h-48 w-48 lg:mx-0">
@@ -689,6 +689,16 @@ const BaristaSimulator = () => {
                   lastAssistantMessage ?? "Your AI barista is standing by."
                 )}
               </p>
+              <audio
+                src={assistantAudioUrl ?? undefined}
+                autoPlay
+                playsInline
+                className="absolute h-0 w-0 overflow-hidden border-0 p-0 opacity-0"
+                onPlay={(event) => {
+                  const target = event.currentTarget as HTMLAudioElement
+                  target.volume = 0.85
+                }}
+              />
             </div>
           </div>
         </div>
@@ -743,7 +753,7 @@ const BaristaSimulator = () => {
                 </div>
               </div>
             </div>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {/* <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {ORDER_SEQUENCE.map((step) => (
                 <div
                   key={step.key}
@@ -758,15 +768,15 @@ const BaristaSimulator = () => {
                   </div>
                 </div>
               ))}
-            </div>
-            <div className="flex justify-end">
+            </div> */}
+            {/* <div className="flex justify-end">
               <button
                 onClick={closeSummary}
                 className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
               >
                 Finish Session
               </button>
-            </div>
+            </div> */}
           </div>
         </div>
       )}
