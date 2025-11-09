@@ -43,7 +43,7 @@ const ORDER_SEQUENCE: Array<{
   },
 ]
 
-const PANEL_BG = "linear-gradient(180deg, rgba(88, 57, 39, 0.97) 0%, rgba(64, 41, 28, 0.98) 100%)"
+const PANEL_BG = "linear-gradient(140deg, rgba(255, 255, 255, 0.92) 0%, rgba(238, 241, 255, 0.86) 100%)"
 
 const formatter = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 1,
@@ -55,7 +55,7 @@ const BaristaSimulator = () => {
   const gameRef = useRef<any>(null)
   const ambientSourceRef = useRef<AudioBufferSourceNode | null>(null)
 
-  const { orderState, isSpeaking } = useConversation()
+  const { orderState, isSpeaking, messages, assistantAudioUrl } = useConversation()
 
   const [promptVisible, setPromptVisible] = useState(false)
   const [dialogue, setDialogue] = useState<DialogueState>({
@@ -496,59 +496,134 @@ const BaristaSimulator = () => {
       ORDER_SEQUENCE.find((step) => !orderState[step.key]) ??
       ORDER_SEQUENCE[ORDER_SEQUENCE.length - 1]
 
-    return (
-      <>
-        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-amber-200/70">
-          <span className="inline-block h-px w-6 bg-amber-200/30"></span>
-          Voice Ordering
-        </div>
-        <h3 className="mt-3 font-serif text-2xl font-medium leading-relaxed text-amber-50">{activeStep.prompt}</h3>
-        <p className="mt-1 text-sm leading-relaxed text-amber-100/70">
-          Speak naturally—no buttons needed. Each section below updates automatically as you complete it with your
-          voice.
-        </p>
-        <div className="mt-6 space-y-3">
-          {ORDER_SEQUENCE.map((step) => {
-            const status = orderState[step.key]
-              ? "complete"
-              : activeStep?.key === step.key
-                ? "active"
-                : "pending"
-            const statusStyles =
-              status === "complete"
-                ? "border-emerald-300/40 from-emerald-500/15 to-emerald-400/10 text-emerald-100"
-                : status === "active"
-                  ? "border-amber-200/40 from-amber-300/15 to-amber-200/10 text-amber-50"
-                  : "border-amber-200/15 from-amber-50/5 to-amber-100/5 text-amber-100/80"
-            const indicatorStyles =
-              status === "complete"
-                ? "bg-emerald-500 text-emerald-950"
-                : status === "active"
-                  ? "bg-amber-400 text-amber-950 animate-pulse"
-                  : "bg-amber-900/50 text-amber-200/70"
-            const indicatorLabel = status === "complete" ? "✓" : status === "active" ? "●" : "•"
-            const statusText =
-              status === "complete" ? "Captured" : status === "active" ? "Listening now" : "Waiting for voice input"
+    // return (
+    //   <div className="space-y-6">
+    //     <div className="space-y-2">
+    //       <h3 className="text-3xl font-semibold text-[#1c1b33]">{activeStep.prompt}</h3>
+    //       <p className="text-sm text-[#50506a]">
+    //         Speak naturally—each segment below fills in automatically as soon as you cover it in conversation.
+    //       </p>
+    //     </div>
+    //     <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    //       {ORDER_SEQUENCE.map((step) => {
+    //         const status = orderState[step.key]
+    //           ? "complete"
+    //           : activeStep?.key === step.key
+    //             ? "active"
+    //             : "pending"
 
-            return (
-              <div
-                key={step.key}
-                className={`flex items-center gap-4 rounded-2xl border bg-linear-to-br px-5 py-4 shadow-lg backdrop-blur-sm transition-all duration-200 ${statusStyles}`}
-              >
-                <span
-                  className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full font-semibold shadow-md transition-transform duration-200 ${indicatorStyles}`}
-                >
-                  {indicatorLabel}
-                </span>
-                <div className="flex flex-col">
-                  <span className="text-base font-medium">{step.title}</span>
-                  <span className="text-sm text-amber-100/70">{statusText}</span>
+    //         const statusText =
+    //           status === "complete"
+    //             ? "Captured"
+    //             : status === "active"
+    //               ? "Listening now"
+    //               : "Waiting for voice input"
+
+    //         const ringColor =
+    //           status === "complete"
+    //             ? "border-[#3ec66d] bg-[#dff9e7]"
+    //             : status === "active"
+    //               ? "border-[#53b6ff] bg-[#e4f3ff]"
+    //               : "border-[#d1d4e5] bg-white/90"
+
+    //         const textColor =
+    //           status === "complete"
+    //             ? "text-[#137c35]"
+    //             : status === "active"
+    //               ? "text-[#1c4c8a]"
+    //               : "text-[#7b7f96]"
+
+    //         return (
+    //           <div
+    //             key={step.key}
+    //             className={`flex flex-col gap-2 rounded-3xl border-2 px-5 py-4 shadow-md shadow-black/5 transition-all duration-200 ${ringColor}`}
+    //           >
+    //             <span className="text-sm font-bold uppercase tracking-wide text-[#1b2140]">{step.title}</span>
+    //             <span className={`text-xs font-semibold ${textColor}`}>{statusText}</span>
+    //           </div>
+    //         )
+    //       })}
+    //     </div>
+    //   </div>
+    // )
+  }
+
+  const renderCustomerOverlay = () => {
+    if (!isDialogueActive) {
+      return null
+    }
+
+    const completionRatio = ORDER_SEQUENCE.length > 0 ? completedSteps / ORDER_SEQUENCE.length : 0
+    const score = Math.round(completionRatio * 100)
+
+    return (
+      <div className="pointer-events-none absolute inset-0 z-20 flex items-start justify-center pt-6">
+        <div className="relative flex w-[640px] max-w-[90vw] flex-col gap-6 rounded-[48px] border-8 border-[#f4c267] bg-[#fff6e6] p-10 shadow-[0_40px_120px_rgba(43,24,6,0.25)]">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+            <div className="relative mx-auto h-48 w-48 lg:mx-0">
+              <div className="absolute inset-0 rounded-full bg-[#f7d8ab]" />
+              <div className="absolute -top-6 left-1/2 h-20 w-40 -translate-x-1/2 rounded-[60px] bg-[#582c15] shadow-[0_12px_0_rgba(0,0,0,0.12)]" />
+              <div className="absolute -top-8 left-1/2 flex -translate-x-1/2 gap-2">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <span
+                    key={`hair-${index}`}
+                    className="h-10 w-10 rounded-full bg-[#3c1c0c] shadow-[0_4px_0_rgba(0,0,0,0.15)]"
+                    style={{ transform: `translateY(${index % 2 === 0 ? 0 : 6}px)` }}
+                  />
+                ))}
+              </div>
+              <div className="absolute top-[42%] left-1/2 flex w-36 -translate-x-1/2 justify-between">
+                <div className="relative h-14 w-14 rounded-full border-[6px] border-[#f4c267] bg-[#ffe8a2]/70">
+                  <div className="absolute left-1/2 top-1/2 h-7 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#3a210f]/70" />
+                </div>
+                <div className="relative h-14 w-14 rounded-full border-[6px] border-[#f4c267] bg-[#ffe8a2]/70">
+                  <div className="absolute left-1/2 top-1/2 h-7 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#3a210f]/70" />
                 </div>
               </div>
-            )
-          })}
+              <div className="absolute top-[52%] left-1/2 h-2.5 w-10 -translate-x-1/2 rounded-full bg-[#f4c267]" />
+              <div className="absolute top-[68%] left-1/2 h-1.5 w-10 -translate-x-1/2 rounded-full bg-[#f4c267]" />
+              <div className="absolute top-[76%] left-1/2 h-6 w-20 -translate-x-1/2 rounded-full border-b-[7px] border-[#9a4526]"></div>
+              {/* <div className="absolute -bottom-6 left-1/2 h-24 w-48 -translate-x-1/2 rounded-[44px] bg-[#2f374a]" />
+              <div className="absolute -bottom-12 left-1/2 h-24 w-52 -translate-x-1/2 rounded-[44px] bg-[#f28b2f]" /> */}
+            </div>
+
+            <div className="flex-1 space-y-5">
+              <div className="flex flex-col gap-3 rounded-[32px] border-4 border-[#f4dba8] bg-white/90 px-6 py-5 text-[#5a3713] shadow-inner">
+                <div className="flex flex-wrap items-center gap-4">
+                  <div className="text-xs font-bold uppercase tracking-[0.4em] text-[#c17b2a]">Barista</div>
+                </div>
+                <div className="text-4xl font-black text-[#352115]">Timm</div>
+                
+              </div>
+              
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+            <div className="flex-1 rounded-[32px] border-4 border-[#f4dba8] bg-white/95 px-6 py-5 shadow-inner text-[#5a3713]">
+              <div className="text-xs font-black uppercase tracking-[0.4em] text-[#c17b2a]">Live Transcript</div>
+              <p className="mt-3 text-sm leading-6">
+                {messages.length > 0 ? messages[messages.length - 1].content : "Waiting for conversation to begin..."}
+              </p>
+            </div>
+            <div className="flex-1 rounded-[32px] border-4 border-[#f4dba8] bg-white/95 px-6 py-5 shadow-inner text-[#5a3713]">
+              <div className="text-xs font-black uppercase tracking-[0.4em] text-[#c17b2a]">Barista Reply</div>
+              <p className="mt-3 text-sm leading-6">
+                {assistantAudioUrl
+                  ? "Brewing response audio..."
+                  : messages.slice().reverse().find((msg) => msg.role === "assistant")?.content ??
+                    "Your AI barista is standing by."}
+              </p>
+            </div>
+            {isSpeaking && (
+              <div className="relative rounded-[28px] border-4 border-[#f4dba8] bg-[#fffaf1] px-5 py-4 text-sm font-semibold text-[#5a3713] shadow-lg lg:self-center">
+                Generating reply...
+                <span className="absolute -bottom-4 left-6 h-6 w-6 rotate-45 border-b-4 border-r-4 border-[#f4dba8] bg-[#fffaf1]"></span>
+              </div>
+            )}
+          </div>
         </div>
-      </>
+      </div>
     )
   }
 
@@ -559,106 +634,80 @@ const BaristaSimulator = () => {
         className="h-[540px] w-full overflow-hidden rounded-3xl border border-amber-900/20 bg-[#f7f1e3] shadow-2xl"
       />
 
-      {isDialogueActive && (
-        <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
-          <div className="relative h-56 w-56 animate-[pulse_4s_ease-in-out_infinite]">
-            <div className="absolute inset-0 rounded-full border-4 border-amber-400/60 bg-linear-to-br from-amber-50/95 via-amber-100/90 to-amber-200/90 shadow-[0_30px_60px_rgba(58,36,21,0.35)] backdrop-blur-sm" />
-            <div className="absolute inset-[18%] rounded-full bg-amber-50/90 shadow-inner" />
-            <div className="absolute left-1/2 top-[38%] flex w-24 -translate-x-1/2 justify-between">
-              <span className="h-6 w-6 rounded-full bg-amber-900/85 shadow-[0_4px_8px_rgba(0,0,0,0.25)]" />
-              <span className="h-6 w-6 rounded-full bg-amber-900/85 shadow-[0_4px_8px_rgba(0,0,0,0.25)]" />
-            </div>
-            <div className="absolute left-1/2 top-[60%] h-12 w-24 -translate-x-1/2 rounded-b-full border-b-8 border-amber-900/80" />
-          </div>
-        </div>
-      )}
-
-      {dialogue.step !== "idle" && isSpeaking && (
-        <div
-          className="pointer-events-none absolute z-30 animate-pulse"
-          style={{ left: "33%", top: "12%" }}
-        >
-          <div className="relative">
-            <div className="rounded-3xl border border-amber-900/10 bg-amber-50/95 px-4 py-2 text-sm font-semibold text-amber-900 shadow-xl">
-              Brewing a response...
-            </div>
-            <div className="absolute left-8 top-full h-4 w-4 -translate-x-1/2 rotate-45 border border-amber-900/10 bg-amber-50/95 shadow-lg" />
-          </div>
-        </div>
-      )}
+      {renderCustomerOverlay()}
 
       {promptVisible && !isDialogueActive && (
         <div className="pointer-events-none absolute inset-x-0 top-6 flex justify-center">
-          <div className="animate-pulse rounded-full border border-amber-900/30 bg-linear-to-r from-amber-900/90 to-amber-800/90 px-6 py-3 text-sm font-semibold uppercase tracking-wider text-amber-50 shadow-xl backdrop-blur-sm">
-            <span className="mr-2 inline-block">☕</span>
-            Press E to order
+          <div className="flex items-center gap-3 rounded-full border border-white/40 bg-white/80 px-6 py-3 text-sm font-semibold text-slate-600 shadow-lg backdrop-blur">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-sky-400 font-semibold text-white shadow-sm">
+              E
+            </span>
+            Step up to start your voice order
           </div>
         </div>
       )}
 
       {dialogue.step === "summary" && (
-        <div className="absolute inset-x-4 bottom-4 overflow-hidden rounded-3xl border border-amber-300/40 bg-linear-to-br from-amber-900/98 to-amber-950/98 shadow-2xl backdrop-blur-md">
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNnoiIHN0cm9rZT0icmdiYSgyNTUsIDI1NSwgMjU1LCAwLjAzKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9nPjwvc3ZnPg==')] opacity-30"></div>
-          <div className="relative p-6">
-            <div className="flex flex-col gap-5 text-sm text-amber-50 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-amber-300/70">
-                  <span className="inline-block h-px w-6 bg-amber-300/30"></span>
-                  Voice Order Complete
+        <div className="absolute inset-x-4 bottom-4">
+          <div className="flex flex-col gap-6 rounded-3xl border border-white/60 bg-white/85 px-6 py-6 text-slate-700 shadow-[0_24px_80px_rgba(15,18,35,0.18)] backdrop-blur">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <div className="inline-flex items-center gap-2 rounded-full bg-slate-900/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400"></span>
+                  Voice Session Complete
                 </div>
-                <h3 className="mt-3 font-serif text-2xl font-medium text-amber-50">
-                  Voice Session Wrapped
-                </h3>
-                <p className="mt-2 text-lg leading-relaxed text-amber-100/90">
-                  All drink details were captured through your voice responses. Nicely done!
+                <h3 className="mt-3 text-2xl font-semibold text-slate-900">Order captured successfully</h3>
+                <p className="text-sm text-slate-500">
+                  Every step was confirmed via your voice responses. Great job staying in flow.
                 </p>
-                <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  {ORDER_SEQUENCE.map((step) => (
-                    <div
-                      key={step.key}
-                      className="flex items-center gap-3 rounded-2xl border border-emerald-400/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100 shadow-inner"
-                    >
-                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-400 text-base font-bold text-emerald-950">
-                        ✓
-                      </span>
-                      <div className="flex flex-col">
-                        <span className="font-semibold">{step.title}</span>
-                        <span className="text-xs text-emerald-100/70">Confirmed via voice</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
               </div>
-              <div className="flex items-center gap-8">
-                <div className="text-center">
-                  <div className="text-xs uppercase tracking-widest text-amber-300/70">Steps</div>
-                  <div className="mt-1 font-serif text-3xl font-semibold text-amber-100">{totalSteps}</div>
+              <div className="flex gap-6">
+                <div className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 text-center shadow-sm">
+                  <div className="text-xs font-semibold uppercase tracking-widest text-slate-500">Steps</div>
+                  <div className="mt-1 text-2xl font-semibold text-slate-900">{totalSteps}</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-xs uppercase tracking-widest text-amber-300/70">Time</div>
-                  <div className="mt-1 font-serif text-3xl font-semibold text-amber-100">
+                <div className="rounded-2xl border border-slate-200 bg-white/70 px-4 py-3 text-center shadow-sm">
+                  <div className="text-xs font-semibold uppercase tracking-widest text-slate-500">Time</div>
+                  <div className="mt-1 text-2xl font-semibold text-slate-900">
                     {totalTime !== null ? `${formatter.format(totalTime)}s` : "—"}
                   </div>
                 </div>
-                <button
-                  onClick={closeSummary}
-                  className="rounded-full bg-linear-to-br from-amber-400 to-amber-600 px-6 py-3 text-sm font-bold uppercase tracking-wider text-amber-950 shadow-lg transition-all duration-200 hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-amber-300/60"
-                >
-                  Done
-                </button>
               </div>
+            </div>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              {ORDER_SEQUENCE.map((step) => (
+                <div
+                  key={step.key}
+                  className="flex items-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/80 px-4 py-3 text-sm text-emerald-800 shadow-sm"
+                >
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-400 text-base font-bold text-emerald-950">
+                    ✓
+                  </span>
+                  <div className="flex flex-col">
+                    <span className="font-semibold">{step.title}</span>
+                    <span className="text-xs text-emerald-700/70">Confirmed via voice</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end">
+              <button
+                onClick={closeSummary}
+                className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400"
+              >
+                Finish Session
+              </button>
             </div>
           </div>
         </div>
       )}
 
       {isDialogueActive && (
+        <div className="absolute inset-x-4 bottom-4">
         <div
-          className="absolute inset-x-0 bottom-0 overflow-hidden rounded-t-3xl border-t border-amber-200/30 shadow-[0_-20px_60px_rgba(64,41,28,0.6)] backdrop-blur-md"
+            className="rounded-3xl border border-white/60 bg-white/80 px-6 py-6 shadow-[0_24px_80px_rgba(15,18,35,0.18)] backdrop-blur"
           style={{ background: PANEL_BG }}
         >
-          <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNnoiIHN0cm9rZT0icmdiYSgyNTUsIDI1NSwgMjU1LCAwLjAzKSIgc3Ryb2tlLXdpZHRoPSIxIi8+PC9nPjwvc3ZnPg==')] opacity-20"></div>
-          <div className="relative px-6 pb-6 pt-8">
             {renderVoiceGuidance()}
           </div>
         </div>

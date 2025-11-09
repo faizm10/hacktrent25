@@ -361,25 +361,121 @@ const CustomerSessionScreen = () => {
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-10 px-4 py-10 sm:px-6 lg:px-8">
         <section className="space-y-4 rounded-3xl border border-white/30 bg-white/10 p-6 shadow-[0_25px_60px_rgba(35,27,22,0.18)] backdrop-blur-xl">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <div className="text-xs font-semibold uppercase tracking-widest text-[#5A7D66]">
-                Interactive Scenario
+          <div className="flex flex-col gap-6 lg:flex-row">
+            <div className="flex-1">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="text-xs font-semibold uppercase tracking-widest text-[#5A7D66]">
+                    Interactive Scenario
+                  </div>
+                  <h2 className="text-xl font-semibold" style={{ color: "#324038" }}>
+                    2D Barista Ordering Simulator
+                  </h2>
+                </div>
+                <p className="text-sm text-[#4A5A52] max-w-lg">
+                  Move with WASD, press E at the counter, and complete the drink order. Results appear once the pickup
+                  name is confirmed.
+                </p>
               </div>
-              <h2 className="text-xl font-semibold" style={{ color: "#324038" }}>
-                2D Barista Ordering Simulator
-              </h2>
+              <BaristaSimulator />
             </div>
-            <p className="text-sm text-[#4A5A52] max-w-lg">
-              Move with WASD, press E at the counter, and complete the drink order. Results appear once the pickup
-              name is confirmed.
-            </p>
+            <div className="flex w-full justify-center lg:w-[360px]">
+              <div className="flex w-full flex-col gap-5 rounded-3xl border border-white/40 bg-white/75 px-6 py-6 text-center text-[#4A3F35] shadow-lg backdrop-blur">
+                <h3 className="text-lg font-semibold uppercase tracking-[0.2em] text-[#5A7D66]">Session Controls</h3>
+                <p className="text-sm text-[#4A5A52]">
+                  Start recording, send the transcript, or finish your session without leaving the simulator view.
+                </p>
+                <Toolbar>
+                  <button
+                    onClick={startListening}
+                    disabled={isListening}
+                    className="inline-flex items-center gap-2 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:shadow-md transition-all duration-300 active:scale-95 focus:ring-4 focus:ring-opacity-50 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                    style={{ backgroundColor: "#6AA97C" }}
+                    onMouseEnter={(e) => {
+                      if (!isListening) {
+                        e.currentTarget.style.backgroundColor = "#5A936A"
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isListening) {
+                        e.currentTarget.style.backgroundColor = "#6AA97C"
+                      }
+                    }}
+                  >
+                    <span>🎙️</span>
+                    {isListening ? "Listening..." : "Start Talking"}
+                  </button>
+
+                  <button
+                    onClick={handleStopAndSave}
+                    disabled={(!isListening && !transcript.trim()) || isLoading}
+                    className="px-6 py-3 text-base font-medium rounded-lg border-2 transition-all duration-300 active:scale-95 focus:ring-4 focus:ring-opacity-50 focus:outline-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    style={{
+                      borderColor: "#6AA97C",
+                      color: "#356B47",
+                      backgroundColor: "transparent",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isLoading && (isListening || transcript.trim())) {
+                        e.currentTarget.style.backgroundColor = "#E3F2E7"
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent"
+                    }}
+                  >
+                    {isLoading ? "Processing..." : "Stop & Send"}
+                  </button>
+
+                  <button
+                    onClick={handleFinish}
+                    disabled={!isOrderComplete}
+                    className="px-6 py-3 text-base font-medium rounded-lg border-2 transition-all duration-300 active:scale-95 focus:ring-4 focus:ring-opacity-50 focus:outline-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    style={{
+                      borderColor: "#C5A967",
+                      color: "#5F4C2B",
+                      backgroundColor: "transparent",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (isOrderComplete) {
+                        e.currentTarget.style.backgroundColor = "#F6ECD3"
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "transparent"
+                    }}
+                  >
+                    Finish Scenario
+                  </button>
+
+                  <span
+                    className="ml-auto inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium"
+                    style={
+                      isListening
+                        ? {
+                            backgroundColor: "rgba(106, 169, 124, 0.12)",
+                            color: "#356B47",
+                          }
+                        : {
+                            backgroundColor: "rgba(95, 76, 43, 0.12)",
+                            color: "#5F4C2B",
+                          }
+                    }
+                  >
+                    <span
+                      className="inline-block h-2.5 w-2.5 rounded-full"
+                      style={{ backgroundColor: isListening ? "#6AA97C" : "#C5A967" }}
+                    />
+                    Mic is {isListening ? "ON" : "OFF"}
+                  </span>
+                </Toolbar>
+              </div>
+            </div>
           </div>
-          <BaristaSimulator />
         </section>
 
         <section className="relative overflow-hidden rounded-3xl border border-white/40 bg-white/5 p-8 shadow-[0_25px_60px_rgba(35,27,22,0.18)] backdrop-blur-xl">
-          <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-[#3F2A1F]/40 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 h-24 bg-linear-to-t from-[#3F2A1F]/40 to-transparent" />
           <div className="relative flex flex-col gap-10 md:flex-row md:items-end md:justify-between">
             <div className="space-y-6">
               <div className="inline-flex items-center gap-3 rounded-full bg-white/80 px-4 py-2 shadow-sm">
@@ -503,7 +599,7 @@ const CustomerSessionScreen = () => {
                     <p className="text-xs font-medium text-slate-500">
                       {msg.role === "user" ? "You" : "Customer"}:
                     </p>
-                    <p className="text-sm text-slate-600 break-words whitespace-pre-wrap">
+                    <p className="text-sm text-slate-600 wrap-break-word whitespace-pre-wrap">
                       {msg.content}
                     </p>
                   </div>
@@ -556,97 +652,6 @@ const CustomerSessionScreen = () => {
             completed={orderState?.completed ?? false}
           />
         </section>
-
-        <Toolbar>
-          <button
-            onClick={startListening}
-            disabled={isListening}
-            className="inline-flex items-center gap-2 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:shadow-md transition-all duration-300 active:scale-95 focus:ring-4 focus:ring-opacity-50 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-            style={{ backgroundColor: "#6AA97C" }}
-            onMouseEnter={(e) => {
-              if (!isListening) {
-                e.currentTarget.style.backgroundColor = "#5A936A";
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isListening) {
-                e.currentTarget.style.backgroundColor = "#6AA97C";
-              }
-            }}
-          >
-            <span>🎙️</span>
-            {isListening ? "Listening..." : "Start Talking"}
-          </button>
-
-          <button
-            onClick={handleStopAndSave}
-            disabled={(!isListening && !transcript.trim()) || isLoading}
-            className="px-6 py-3 text-base font-medium rounded-lg border-2 transition-all duration-300 active:scale-95 focus:ring-4 focus:ring-opacity-50 focus:outline-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-            style={{
-              borderColor: "#6AA97C",
-              color: "#356B47",
-              backgroundColor: "transparent",
-            }}
-            onMouseEnter={(e) => {
-              if (!isLoading && (isListening || transcript.trim())) {
-                e.currentTarget.style.backgroundColor = "#E3F2E7";
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "transparent";
-            }}
-          >
-            {isLoading ? "Processing..." : "Stop & Send"}
-          </button>
-
-          <button
-            onClick={handleFinish}
-            disabled={!isOrderComplete}
-            className="px-6 py-3 text-base font-medium rounded-lg border-2 transition-all duration-300 active:scale-95 focus:ring-4 focus:ring-opacity-50 focus:outline-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
-            style={{
-              borderColor: "#C5A967",
-              color: "#5F4C2B",
-              backgroundColor: "transparent",
-            }}
-            onMouseEnter={(e) => {
-              if (isOrderComplete) {
-                e.currentTarget.style.backgroundColor = "#F6ECD3";
-              }
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = "transparent";
-            }}
-          >
-            Finish Scenario
-          </button>
-
-          <span
-            className="ml-auto inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-medium"
-            style={
-              isListening
-                ? {
-                    backgroundColor: "#E5F6EC",
-                    color: "#2F855A",
-                  }
-                : {
-                    backgroundColor: "#F2EADF",
-                    color: "#6B5D52",
-                  }
-            }
-          >
-            <span
-              aria-hidden="true"
-              className="h-2 w-2 rounded-full"
-              style={{
-                backgroundColor: isListening ? "#48BB78" : "#9C7C5B",
-                animation: isListening
-                  ? "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite"
-                  : "none",
-              }}
-            />
-            {micStatusLabel}
-          </span>
-        </Toolbar>
 
         <ToastPlaceholder message={statusMessage} />
       </main>
