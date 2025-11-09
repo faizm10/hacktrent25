@@ -504,11 +504,11 @@ const HomeScreen = () => {
               <span>•</span>
               <a href="mailto:hello@echolag.com" className="hover:text-white transition-colors duration-200 cursor-pointer">Contact Us</a>
             </div>
-            
+             
             {/* Copyright */}
             <div className="pt-6 border-t" style={{ borderColor: '#6b7280' }}>
               <p className="text-xs" style={{ color: '#9ca3af' }}>
-                © 2024 EchoLag. All rights reserved.
+                © {new Date().getFullYear()} EchoLag. All rights reserved.
               </p>
             </div>
           </div>
