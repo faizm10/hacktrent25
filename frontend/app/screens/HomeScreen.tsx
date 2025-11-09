@@ -508,7 +508,7 @@ const HomeScreen = () => {
             {/* Copyright */}
             <div className="pt-6 border-t" style={{ borderColor: '#6b7280' }}>
               <p className="text-xs" style={{ color: '#9ca3af' }}>
-                © 2024 EchoLag. All rights reserved.
+                © {new Date().getFullYear()} EchoLag. All rights reserved.
               </p>
             </div>
           </div>
