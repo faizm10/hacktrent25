@@ -341,14 +341,26 @@ const CustomerSessionScreen = () => {
     : "Start speaking and your words will appear here in real time.";
 
   useEffect(() => {
-    if (!liveTranscriptRef.current) {
-      return;
-    }
-    const container = liveTranscriptRef.current;
-    requestAnimationFrame(() => {
-      container.scrollTop = container.scrollHeight;
-    });
-  }, [transcript]);
+    const scrollToBottom = () => {
+      // Handle live transcript scrolling
+      if (liveTranscriptRef.current) {
+        const container = liveTranscriptRef.current;
+        const scrollHeight = container.scrollHeight;
+        container.scrollTop = scrollHeight;
+      }
+
+      // Handle archive scrolling
+      if (archiveContentRef.current) {
+        const container = archiveContentRef.current;
+        const scrollHeight = container.scrollHeight;
+        container.scrollTop = scrollHeight;
+      }
+    };
+
+    // Ensure scrolling happens after content updates
+    const timeoutId = setTimeout(scrollToBottom, 50);
+    return () => clearTimeout(timeoutId);
+  }, [transcript, messages, showArchive]);
 
   return (
     <CafeBackground>
@@ -433,12 +445,17 @@ const CustomerSessionScreen = () => {
                   <div
                     ref={liveTranscriptRef}
                     className="max-h-64 min-h-[200px] overflow-y-auto rounded-2xl border border-white/60 bg-white/95 p-5 text-sm text-[#4A3F35] shadow-inner"
+                    style={{
+                      overscrollBehavior: "contain",
+                    }}
                   >
-                    <p className="whitespace-pre-wrap">
-                      {transcript.trim()
-                        ? transcript
-                        : "Start the mic to stream your words here in text form."}
-                    </p>
+                    <div className="flex flex-col-reverse">
+                      <p className="whitespace-pre-wrap">
+                        {transcript.trim()
+                          ? transcript
+                          : "Start the mic to stream your words here in text form."}
+                      </p>
+                    </div>
                   </div>
                 </div>
                 {!recognitionSupported ? (
@@ -505,7 +522,7 @@ const CustomerSessionScreen = () => {
                   <button
                     onClick={handleStopAndSave}
                     disabled={(!isListening && !transcript.trim()) || isLoading}
-                    className="inline-flex items-center gap-2 px-6 py-3 text-base font-medium rounded-lg border-2 transition-all duration-300 active:scale-95 focus:ring-4 focus:ring-opacity-50 focus:outline-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="px-6 py-3 text-base font-medium rounded-lg border-2 transition-all duration-300 active:scale-95 focus:ring-4 focus:ring-opacity-50 focus:outline-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                     style={{
                       borderColor: "#6AA97C",
                       color: "#356B47",
