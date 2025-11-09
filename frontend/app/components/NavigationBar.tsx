@@ -68,7 +68,7 @@ const NavigationBar = () => {
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(139, 157, 131, 0.1)'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    <span className="text-2xl">☕</span>
+                    <span className="text-2xl">⚡</span>
                     <div>
                       <p className="font-medium" style={{ color: '#3c372d' }}>General Scenario</p>
                       <p className="text-xs" style={{ color: '#9ca3af' }}>Choose your own scenario for practice!</p>
@@ -84,7 +84,7 @@ const NavigationBar = () => {
                     onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(139, 157, 131, 0.1)'}
                     onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   >
-                    <span className="text-2xl">⚡</span>
+                    <span className="text-2xl">☕</span>
                     <div>
                       <p className="font-medium" style={{ color: '#3c372d' }}>Barista Practice</p>
                       <p className="text-xs" style={{ color: '#9ca3af' }}>Guided coffee order flow</p>
