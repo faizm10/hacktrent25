@@ -10,6 +10,8 @@ type SessionMessage = {
   content: string;
 };
 
+type SessionScenario = 'barista-practice' | 'customer-rush';
+
 type SessionData = {
   transcript: string;
   messages: SessionMessage[];
@@ -19,6 +21,7 @@ type SessionData = {
   startTime: string;
   endTime: string;
   audioUrl?: string | null;
+  scenarioType?: SessionScenario;
 };
 
 type AnalysisResponse = {
@@ -103,7 +106,10 @@ const FeedbackPage = () => {
         return;
       }
 
-      setSessionData(parsed);
+      setSessionData({
+        ...parsed,
+        scenarioType: parsed.scenarioType ?? 'barista-practice',
+      });
     } catch (err) {
       console.error('Failed to read session data', err);
       setError('Unable to load session data.');
@@ -188,6 +194,13 @@ const FeedbackPage = () => {
       { label: 'Duration', value: formatDuration(sessionData.duration) },
     ];
   }, [sessionData]);
+
+  const practiceAgainRoute = useMemo(() => {
+    if (sessionData?.scenarioType === 'customer-rush') {
+      return ROUTES.CUSTOMER;
+    }
+    return ROUTES.SESSION;
+  }, [sessionData?.scenarioType]);
 
   if (isLoading || !analysis || !sessionData) {
     return (
@@ -419,7 +432,7 @@ const FeedbackPage = () => {
           className="flex flex-col gap-4 sm:flex-row sm:justify-center"
         >
           <button
-            onClick={() => router.push(ROUTES.CUSTOMER)}
+            onClick={() => router.push(practiceAgainRoute)}
             className="w-full rounded-full px-10 py-4 text-base font-semibold sm:w-auto"
             style={{
               backgroundColor: ACCENT_GREEN,

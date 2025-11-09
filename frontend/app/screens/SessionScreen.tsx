@@ -314,6 +314,7 @@ const SessionScreen = () => {
       startTime: new Date(startTimestamp).toISOString(),
       endTime: new Date(endTimestamp).toISOString(),
       audioUrl: audioUrl || null,
+      scenarioType: "barista-practice",
     };
 
     try {

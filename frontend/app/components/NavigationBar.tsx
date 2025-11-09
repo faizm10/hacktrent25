@@ -2,11 +2,9 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { ROUTES } from "../lib/routes";
 
 const NavigationBar = () => {
-  const router = useRouter();
-
   return (
     <nav className="fixed top-0 w-full z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-6 py-4">
@@ -59,10 +57,10 @@ const NavigationBar = () => {
               </button>
               
               {/* Dropdown Menu */}
-              <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div className="p-2">
+              <div className="absolute top-full left-0 mt-2 w-60 bg-white rounded-2xl shadow-xl border border-gray-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+                <div className="p-3 space-y-2">
                   <Link 
-                    href="/session?scenario=coffee"
+                    href={ROUTES.SESSION}
                     className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer"
                     style={{ 
                       backgroundColor: 'transparent'
@@ -72,26 +70,42 @@ const NavigationBar = () => {
                   >
                     <span className="text-2xl">☕</span>
                     <div>
-                      <p className="font-medium" style={{ color: '#3c372d' }}>Coffee Shop</p>
-                      <p className="text-xs" style={{ color: '#9ca3af' }}>Order your favorite drink</p>
+                      <p className="font-medium" style={{ color: '#3c372d' }}>Barista Practice</p>
+                      <p className="text-xs" style={{ color: '#9ca3af' }}>Guided coffee order flow</p>
                     </div>
                   </Link>
                   
-                  <div className="flex items-center gap-3 px-4 py-3 rounded-lg opacity-50 cursor-not-allowed">
-                    <span className="text-2xl">💊</span>
+                  <Link 
+                    href={ROUTES.CUSTOMER}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer"
+                    style={{ 
+                      backgroundColor: 'transparent'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(139, 157, 131, 0.1)'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <span className="text-2xl">⚡</span>
                     <div>
-                      <p className="font-medium" style={{ color: '#3c372d' }}>Pharmacy Pickup</p>
-                      <p className="text-xs" style={{ color: '#9ca3af' }}>Coming soon</p>
+                      <p className="font-medium" style={{ color: '#3c372d' }}>Customer Rush</p>
+                      <p className="text-xs" style={{ color: '#9ca3af' }}>High-pressure practice</p>
                     </div>
-                  </div>
+                  </Link>
                   
-                  <div className="flex items-center gap-3 px-4 py-3 rounded-lg opacity-50 cursor-not-allowed">
-                    <span className="text-2xl">📞</span>
+                  <Link 
+                    href={ROUTES.FILLER_WORDS}
+                    className="flex items-center gap-3 px-4 py-3 rounded-lg transition-colors cursor-pointer"
+                    style={{ 
+                      backgroundColor: 'transparent'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(139, 157, 131, 0.1)'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                  >
+                    <span className="text-2xl">🎤</span>
                     <div>
-                      <p className="font-medium" style={{ color: '#3c372d' }}>Phone Call</p>
-                      <p className="text-xs" style={{ color: '#9ca3af' }}>Coming soon</p>
+                      <p className="font-medium" style={{ color: '#3c372d' }}>Crush Filler Words</p>
+                      <p className="text-xs" style={{ color: '#9ca3af' }}>Eliminate “um” in minutes</p>
                     </div>
-                  </div>
+                  </Link>
                 </div>
               </div>
             </div>
