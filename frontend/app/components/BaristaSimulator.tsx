@@ -334,7 +334,7 @@ const BaristaSimulator = () => {
             { name: "Caramel Latte", price: "$4.50" },
             { name: "Cold Brew", price: "$3.80" },
             { name: "Vanilla Oat Capp", price: "$4.75" },
-            { name: "Matcha Latte", price: "$4.20" },
+            // { name: "Matcha Latte", price: "$4.20" },
           ]
           menuItems.forEach((item, index) => {
             this.add.text(650, 112 + index * 32, item.name, {
