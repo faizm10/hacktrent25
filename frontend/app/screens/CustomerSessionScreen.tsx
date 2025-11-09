@@ -17,7 +17,6 @@ import PlayerAvatar from "../components/PlayerAvatar";
 import ProgressChips from "../components/ProgressChips";
 import ToastPlaceholder from "../components/ToastPlaceholder";
 import Toolbar from "../components/Toolbar";
-import TranscriptPanel from "../components/TranscriptPanel";
 import { useConversation } from "../context/ConversationContext";
 import { ROUTES } from "../lib/routes";
 
@@ -43,6 +42,7 @@ const CustomerSessionScreen = () => {
   const [recognitionSupported, setRecognitionSupported] = useState(true);
   const [mediaSupported, setMediaSupported] = useState(true);
   const [savedTranscript, setSavedTranscript] = useState<string | null>(null);
+  const [showArchive, setShowArchive] = useState(false);
 
   const mediaStreamRef = useRef<MediaStream | null>(null);
   const recognitionRef = useRef<any>(null);
@@ -50,6 +50,7 @@ const CustomerSessionScreen = () => {
   const audioChunksRef = useRef<Blob[]>([]);
   const liveAudioRef = useRef<HTMLAudioElement | null>(null);
   const customerAudioRef = useRef<HTMLAudioElement | null>(null);
+  const archiveContentRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -316,6 +317,18 @@ const CustomerSessionScreen = () => {
     );
   }, [messages]);
 
+  const handleTranscriptArchiveClick = useCallback(() => {
+    setShowArchive((prev) => {
+      const next = !prev;
+      if (!prev) {
+        requestAnimationFrame(() => {
+          archiveContentRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+        });
+      }
+      return next;
+    });
+  }, []);
+
   const isOrderComplete = useMemo(() => {
     return orderState?.completed ?? false;
   }, [orderState]);
@@ -361,8 +374,8 @@ const CustomerSessionScreen = () => {
 
       <main className="mx-auto flex w-full max-w-5xl flex-1 flex-col gap-10 px-4 py-10 sm:px-6 lg:px-8">
         <section className="space-y-4 rounded-3xl border border-white/30 bg-white/10 p-6 shadow-[0_25px_60px_rgba(35,27,22,0.18)] backdrop-blur-xl">
-          <div className="flex flex-col gap-6 lg:flex-row">
-            <div className="flex-1">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="flex flex-col gap-4">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <div className="text-xs font-semibold uppercase tracking-widest text-[#5A7D66]">
@@ -379,8 +392,72 @@ const CustomerSessionScreen = () => {
               </div>
               <BaristaSimulator />
             </div>
-            <div className="flex w-full justify-center lg:w-[360px]">
-              <div className="flex w-full flex-col gap-5 rounded-3xl border border-white/40 bg-white/75 px-6 py-6 text-center text-[#4A3F35] shadow-lg backdrop-blur">
+            <div className="flex flex-col gap-6">
+              <div className="flex flex-1 flex-col gap-5 rounded-3xl border border-white/40 bg-white/80 px-6 py-6 text-[#4A3F35] shadow-lg backdrop-blur">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="space-y-1 text-left">
+                    <h3 className="text-lg font-semibold uppercase tracking-[0.2em] text-[#5A7D66]">
+                      Live Transcript
+                    </h3>
+                    <p className="text-sm text-[#4A5A52]">
+                      Watch your spoken words stream into text without leaving the simulator.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleTranscriptArchiveClick}
+                    className="inline-flex items-center gap-2 self-end rounded-full border border-[#6AA97C] px-5 py-2 text-xs font-semibold uppercase tracking-widest text-[#356B47] transition-all duration-300 hover:bg-[#E3F2E7] focus:outline-none focus:ring-4 focus:ring-[#6AA97C]/40 sm:self-auto"
+                    aria-expanded={showArchive}
+                  >
+                    Transcript Archive
+                    <span
+                      className={`text-base transition-transform duration-300 ${showArchive ? "rotate-180" : ""}`}
+                      aria-hidden="true"
+                    >
+                      ▾
+                    </span>
+                  </button>
+                </div>
+                <div className="flex-1 overflow-hidden">
+                  <div className="max-h-64 min-h-[200px] overflow-y-auto rounded-2xl border border-white/60 bg-white/95 p-5 text-sm text-[#4A3F35] shadow-inner">
+                    <p className="whitespace-pre-wrap">
+                      {transcript.trim()
+                        ? transcript
+                        : "Start the mic to stream your words here in text form."}
+                    </p>
+                  </div>
+                </div>
+                {!recognitionSupported ? (
+                  <EmptyState
+                    icon="⚠️"
+                    title="Live transcription unavailable"
+                    helperText="This browser does not support the Web Speech API. You can still record audio."
+                    className="bg-slate-100"
+                  />
+                ) : null}
+                {showArchive && (
+                  <div
+                    ref={archiveContentRef}
+                    className="max-h-48 overflow-y-auto rounded-lg border border-slate-200 bg-white/70 p-4"
+                  >
+                    {messages.length > 0 ? (
+                      messages.map((msg, i) => (
+                        <div key={i} className="space-y-1 pb-3 last:pb-0">
+                          <p className="text-xs font-medium text-slate-500">
+                            {msg.role === "user" ? "You" : "Customer"}:
+                          </p>
+                          <p className="text-sm text-slate-600 whitespace-pre-wrap wrap-break-word">
+                            {msg.content}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-sm text-slate-500">No conversation history yet.</p>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="flex flex-col gap-5 rounded-3xl border border-white/40 bg-white/75 px-6 py-6 text-center text-[#4A3F35] shadow-lg backdrop-blur">
                 <h3 className="text-lg font-semibold uppercase tracking-[0.2em] text-[#5A7D66]">Session Controls</h3>
                 <p className="text-sm text-[#4A5A52]">
                   Start recording, send the transcript, or finish your session without leaving the simulator view.
@@ -393,12 +470,12 @@ const CustomerSessionScreen = () => {
                     style={{ backgroundColor: "#6AA97C" }}
                     onMouseEnter={(e) => {
                       if (!isListening) {
-                        e.currentTarget.style.backgroundColor = "#5A936A"
+                        e.currentTarget.style.backgroundColor = "#5A936A";
                       }
                     }}
                     onMouseLeave={(e) => {
                       if (!isListening) {
-                        e.currentTarget.style.backgroundColor = "#6AA97C"
+                        e.currentTarget.style.backgroundColor = "#6AA97C";
                       }
                     }}
                   >
@@ -417,11 +494,11 @@ const CustomerSessionScreen = () => {
                     }}
                     onMouseEnter={(e) => {
                       if (!isLoading && (isListening || transcript.trim())) {
-                        e.currentTarget.style.backgroundColor = "#E3F2E7"
+                        e.currentTarget.style.backgroundColor = "#E3F2E7";
                       }
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent"
+                      e.currentTarget.style.backgroundColor = "transparent";
                     }}
                   >
                     {isLoading ? "Processing..." : "Stop & Send"}
@@ -438,11 +515,11 @@ const CustomerSessionScreen = () => {
                     }}
                     onMouseEnter={(e) => {
                       if (isOrderComplete) {
-                        e.currentTarget.style.backgroundColor = "#F6ECD3"
+                        e.currentTarget.style.backgroundColor = "#F6ECD3";
                       }
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "transparent"
+                      e.currentTarget.style.backgroundColor = "transparent";
                     }}
                   >
                     Finish Scenario
@@ -560,54 +637,6 @@ const CustomerSessionScreen = () => {
           </div>
         </Card>
 
-        <Card>
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <div
-                className="flex h-10 w-10 items-center justify-center rounded-lg text-xl"
-                style={{ backgroundColor: "#8B9D83" }}
-              >
-                🗒️
-              </div>
-              <h3
-                className="text-lg font-semibold"
-                style={{ color: "#4A3F35" }}
-              >
-                Transcript Archive
-              </h3>
-            </div>
-            <TranscriptPanel
-              title=""
-              content={transcript}
-              placeholderText="Start the mic to stream your words here in text form."
-            />
-            {!recognitionSupported ? (
-              <EmptyState
-                icon="⚠️"
-                title="Live transcription unavailable"
-                helperText="This browser does not support the Web Speech API. You can still record audio."
-                className="bg-slate-100"
-              />
-            ) : null}
-            {messages.length > 0 && (
-              <div className="space-y-4 rounded-lg border border-slate-200 bg-white/70 p-4">
-                <h4 className="text-sm font-semibold text-slate-800">
-                  Conversation History
-                </h4>
-                {messages.map((msg, i) => (
-                  <div key={i} className="space-y-1">
-                    <p className="text-xs font-medium text-slate-500">
-                      {msg.role === "user" ? "You" : "Customer"}:
-                    </p>
-                    <p className="text-sm text-slate-600 wrap-break-word whitespace-pre-wrap">
-                      {msg.content}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </Card>
 
         <Card>
           <div className="space-y-4">
@@ -647,8 +676,8 @@ const CustomerSessionScreen = () => {
             Guest Satisfaction Checklist
           </h3>
           <ProgressChips
+            orderState={orderState}
             currentStep={orderState?.currentStep ?? 0}
-            orderItems={orderState?.orderItems ?? []}
             completed={orderState?.completed ?? false}
           />
         </section>
