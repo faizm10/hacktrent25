@@ -339,6 +339,12 @@ const SessionScreen = () => {
     return orderState.drink && orderState.size && orderState.milk && orderState.name;
   }, [orderState]);
 
+  // Allow finishing even with partial orders - users can review their practice session anytime
+  const canFinish = useMemo(() => {
+    // Allow finishing if there's any transcript content or if order is complete
+    return transcript.trim().length > 0 || isOrderComplete;
+  }, [transcript, isOrderComplete]);
+
   useEffect(() => {
     return () => {
       if (audioUrl) {
@@ -525,7 +531,7 @@ const SessionScreen = () => {
 
           <button
             onClick={handleFinish}
-            disabled={!isOrderComplete}
+            disabled={!canFinish}
             className="px-6 py-3 text-base font-medium rounded-lg border-2 transition-all duration-300 active:scale-95 focus:ring-4 focus:ring-opacity-50 focus:outline-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             style={{ 
               borderColor: '#8B7355',
@@ -533,7 +539,7 @@ const SessionScreen = () => {
               backgroundColor: 'transparent'
             }}
             onMouseEnter={(e) => {
-              if (isOrderComplete) {
+              if (canFinish) {
                 e.currentTarget.style.backgroundColor = '#C4D0BC';
                 e.currentTarget.style.borderColor = '#8B9D83';
               }
