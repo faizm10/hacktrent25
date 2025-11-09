@@ -272,37 +272,44 @@ const SessionScreen = () => {
   }, [assistantAudioUrl]);
 
   const handleFinish = () => {
-    stopListening();
-    
-    // Calculate session duration
-    const duration = sessionStartTime 
-      ? (Date.now() - sessionStartTime) / 1000 
-      : 0;
-    
-    // Save session data to localStorage for feedback page
-    const sessionData = {
-      transcript: transcript.trim(),
-      duration: duration,
-      audioUrl: audioUrl || null,
-    };
-    
-    localStorage.setItem('sessionTranscript', sessionData.transcript);
-    localStorage.setItem('sessionDuration', sessionData.duration.toString());
-    if (sessionData.audioUrl) {
-      localStorage.setItem('sessionAudioUrl', sessionData.audioUrl);
-    }
-    
-    // Navigate to feedback with data in URL params
-    const params = new URLSearchParams({
-      transcript: sessionData.transcript,
-      duration: sessionData.duration.toString(),
-    });
-    if (sessionData.audioUrl) {
-      params.set('audioUrl', sessionData.audioUrl);
-    }
-    
-    router.push(`${ROUTES.FEEDBACK}?${params.toString()}`);
+  stopListening();
+  
+  // Calculate session metrics
+  const duration = sessionStartTime 
+    ? (Date.now() - sessionStartTime) / 1000 
+    : 0;
+  
+  const wordCount = transcript.trim().split(/\s+/).filter(word => word.length > 0).length;
+  const wordsPerMinute = duration > 0 ? Math.round((wordCount / duration) * 60) : 0;
+
+  // Save enhanced session data to localStorage
+  const sessionData = {
+    transcript: transcript.trim(),
+    duration: duration,
+    audioUrl: audioUrl || null,
+    wordCount: wordCount,
+    wordsPerMinute: wordsPerMinute,
+    timestamp: new Date().toISOString(),
+    messageCount: messages.length
   };
+  
+  localStorage.setItem('sessionData', JSON.stringify(sessionData));
+  
+  // Navigate to feedback with enhanced params
+  const params = new URLSearchParams({
+    transcript: sessionData.transcript,
+    duration: sessionData.duration.toString(),
+    wordCount: sessionData.wordCount.toString(),
+    wordsPerMinute: sessionData.wordsPerMinute.toString(),
+    messageCount: sessionData.messageCount.toString()
+  });
+  
+  if (sessionData.audioUrl) {
+    params.set('audioUrl', sessionData.audioUrl);
+  }
+  
+  router.push(`${ROUTES.FEEDBACK}?${params.toString()}`);
+};
 
   const micStatusLabel = useMemo(() => {
     if (!mediaSupported) {
