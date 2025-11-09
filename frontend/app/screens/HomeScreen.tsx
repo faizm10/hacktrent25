@@ -254,7 +254,13 @@ const HomeScreen = () => {
           <div className="text-center space-y-6">
             {/* Logo */}
             <div className="flex items-center justify-center gap-2 text-white">
-              <span className="text-2xl">🎙️</span>
+            <Image
+                src="/favicon.ico"
+                alt="EchoLag Logo"
+                width={24}
+                height={24}
+                priority
+              />
               <span className="text-xl font-bold">EchoLag</span>
             </div>
             
