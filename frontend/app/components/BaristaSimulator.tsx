@@ -362,11 +362,7 @@ const BaristaSimulator = () => {
 
           this.barista = this.physics.add.staticSprite(340, 195, "barista").setDepth(1)
 
-          const customer1 = this.physics.add.staticSprite(760, 250, "customer")
-          const customer2 = this.physics.add.staticSprite(820, 250, "customer")
-          customer1.setDepth(3)
-          customer2.setDepth(3)
-          customer2.setTint(0xb681a8)
+          // Removed customer sprites near the menu board to declutter the space
 
           const welcomeStation = this.add.container(160, 160).setDepth(10)
 
@@ -439,8 +435,6 @@ const BaristaSimulator = () => {
           })
 
         //   this.physics.add.collider(this.player, counter)
-          this.physics.add.collider(this.player, customer1)
-          this.physics.add.collider(this.player, customer2)
           this.physics.add.collider(this.player, this.barista)
 
           const playerBody = this.player.body as ArcadeBody | ArcadeStaticBody | null
